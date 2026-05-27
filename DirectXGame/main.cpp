@@ -1,41 +1,12 @@
 
 #include "KamataEngine.h"
-#include<d3dcompiler.inl>
 #include <Windows.h>
 #include <cassert>
+#include <d3dcompiler.inl>
 using namespace KamataEngine;
 
 // Microsoft::WRL::ComPtr<ID3D12Resource> CreatrRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> debice, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor);
 // D3D12_RESOURCE_DESC resourceDesc{};
-
-//シェーダーコンパイル関数
-//　filePath
-// shaderModel
-
-
-ID3DBlob* CompileShader(const std::wstring& filePath, const std::string& shaderModel) {
-
-	ID3DBlob* shaderBlob = nullptr;
-	ID3DBlob* errorBlob = nullptr;
-
-	HRESULT hr =
-	    D3DCompileFromFile(filePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderModel.c_str(), D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &shaderBlob, &errorBlob);
-
-	if (FAILED(hr)) {
-
-		if (errorBlob) {
-			DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-		}
-
-		assert(false);
-	}
-
-	return shaderBlob;
-}
-
-//関数プロトタイプ宣言
-ID3DBlob* CompileShader(const std::wstring& filePath, const std::string&shaderModel);
-
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
@@ -77,28 +48,62 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-	//BlendState
+	// BlendState
 	D3D12_BLEND_DESC blendDesc{};
-	//すべての色要素を書き込む
+	// すべての色要素を書き込む
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	//RasterizerState
+	// RasterizerState
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
-	//裏面をかリングする
+	// 裏面をかリングする
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//塗りつぶすモードをソリッドにする
+	// 塗りつぶすモードをソリッドにする
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-	//頂点シェーダーの読み込みとコンパイル
-	ID3DBlob* vsBlob= CompileShader(L"Resources/shaders/TestVS.hlsl", "vs_5_0");
-	assert(vsBlob != nullptr);
+	// コンパイル済みのShader　エラーの時情報の格納場所の用意
+	ID3DBlob* vsBlob = nullptr; // 頂点シェーダーオブジェクト
+	ID3DBlob* psBlob = nullptr; //ピクセルシェーダーオブジェクト
+	ID3DBlob* errorBlob = nullptr; // エラーオブジェクト
 
-	//ピクセルシェーダーの読み込みとコンパイル
-	ID3DBlob* psBlob = CompileShader(L"Resources/shaders/testPS.hlsl", "ps_5_0");
-	assert(psBlob != nullptr);
+	// 頂点シェーダーの読み込みとコンパイル
+	std::wstring vsFile = L"Resources/shaders/TestVS.hlsl";
+	hr = D3DCompileFromFile(
+		vsFile.c_str(),
+		nullptr, 
+		D3D_COMPILE_STANDARD_FILE_INCLUDE, 
+		"main", "vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0, &vsBlob, &errorBlob);
+	if (FAILED(hr)) {
+		DebugText::GetInstance()->ConsolePrintf(
+			std::system_category().message(hr).c_str());
+		if (errorBlob) {
+			DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+		}
+		assert(false);
+	}
+	//ピクセルシェーダの読み込みとコンパイル
+	std::wstring psFile = L"Resources/shaders/TestPS.hlsl";
+	hr = D3DCompileFromFile(
+	psFile.c_str(),//シェーダーファイル名
+	nullptr,
+	D3D_COMPILE_STANDARD_FILE_INCLUDE, 
+	"main", "ps_5_0" ,
+	D3DCOMPILE_DEBUG|D3DCOMPILE_SKIP_OPTIMIZATION,
+	0,&psBlob,&errorBlob);
+	if (FAILED(hr)) {
+		DebugText::GetInstance()->ConsolePrintf(std::system_category().message(hr).c_str());
+		if (errorBlob) {
+			DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+		}
+		assert(false);
+	}
 
 
-	//PSOの作成
+
+
+
+	// PSOの作成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = rootSignature;
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
@@ -107,64 +112,62 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	graphicsPipelineStateDesc.BlendState = blendDesc;
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
 
-	//書き込むRTVの情報
+	// 書き込むRTVの情報
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
-	graphicsPipelineStateDesc.RTVFormats[0]=DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	
-	//利用するトポロジ(形状)のタイプ。三角形
+	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+
+	// 利用するトポロジ(形状)のタイプ。三角形
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-	//どのように画面に色を打ち込むかの設定()
+	// どのように画面に色を打ち込むかの設定()
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	//準備は整った。PSOを生成する
+	// 準備は整った。PSOを生成する
 	ID3D12PipelineState* graphicsPipeLineState = nullptr;
 	hr = dxCommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipeLineState));
 	assert(SUCCEEDED(hr));
 
-	//VertexResourceの生成 ------
-	//頂点リソース用のヒープの設定
+	// VertexResourceの生成 ------
+	// 頂点リソース用のヒープの設定
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//CPUから書き込むヒープ
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // CPUから書き込むヒープ
 
-	//頂点リソースの設定
+	// 頂点リソースの設定
 	D3D12_RESOURCE_DESC vertexResourceDesc{};
-	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; //バッファ
-	vertexResourceDesc.Width = sizeof(Vector4) * 3;//リソースのサイズ。今回はvector4を3頂点分
+	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // バッファ
+	vertexResourceDesc.Width = sizeof(Vector4) * 3;                 // リソースのサイズ。今回はvector4を3頂点分
 
-	//バッファの場合はこれらは１にする決まり
+	// バッファの場合はこれらは１にする決まり
 	vertexResourceDesc.Height = 1;
 	vertexResourceDesc.DepthOrArraySize = 1;
 	vertexResourceDesc.MipLevels = 1;
 	vertexResourceDesc.SampleDesc.Count = 1;
-	//バッファの場合これにする決まり
+	// バッファの場合これにする決まり
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	//実際に頂点リソースを生成する
+	// 実際に頂点リソースを生成する
 	ID3D12Resource* vertexResource = nullptr;
 	hr = dxCommon->GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
 	assert(SUCCEEDED(hr));
 
-
-	//VertexBufferViewを作成する
+	// VertexBufferViewを作成する
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	//リソースの先頭アドレスを使う
+	// リソースの先頭アドレスを使う
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	//仕様するリソースのサイズを長短３つ分のサイズ
+	// 仕様するリソースのサイズを長短３つ分のサイズ
 	vertexBufferView.SizeInBytes = sizeof(Vector4) * 3;
-	//1つの頂点サイズ
+	// 1つの頂点サイズ
 	vertexBufferView.StrideInBytes = sizeof(Vector4);
 
-	//頂点リソースにデータを書き込む
+	// 頂点リソースにデータを書き込む
 	Vector4* vertexData = nullptr;
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	vertexData[0] = {-0.5f, -0.5f, 0.0f, 1.0f};//左上
-	vertexData[1] = {0.0f, 0.5f, 0.0f, 1.0f};//上
-	vertexData[2] = {0.5f, -0.5f, 0.0f, 1.0f}; // 右下
+	vertexData[0] = {-0.5f, -0.5f, 0.0f, 1.0f}; // 左上
+	vertexData[1] = {0.0f, 0.5f, 0.0f, 1.0f};   // 上
+	vertexData[2] = {0.5f, -0.5f, 0.0f, 1.0f};  // 右下
 
-	//頂点リソースのマップを解除
+	// 頂点リソースのマップを解除
 	vertexResource->Unmap(0, nullptr);
-
 
 	// メインループ
 	while (true) {
@@ -189,12 +192,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		dxCommon->PostDraw();
 	}
 
-	//解放処理
+	// 解放処理
 	vertexResource->Release();
 	graphicsPipeLineState->Release();
 	signatureBlob->Release();
-	
-
+	if (errorBlob) {
+		errorBlob->Release();
+	}
 	rootSignature->Release();
 	vsBlob->Release();
 	psBlob->Release();
