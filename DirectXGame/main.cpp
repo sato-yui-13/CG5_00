@@ -97,7 +97,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ID3DBlob* psBlob = CompileShader(L"Resources/shaders/testPS.hlsl", "ps_5_0");
 	assert(psBlob != nullptr);
 
-
 	//PSOの作成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = rootSignature;
