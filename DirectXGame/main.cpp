@@ -6,36 +6,6 @@
 #include <cassert>
 using namespace KamataEngine;
 
-// Microsoft::WRL::ComPtr<ID3D12Resource> CreatrRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> debice, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor);
-// D3D12_RESOURCE_DESC resourceDesc{};
-
-//シェーダーコンパイル関数
-//　filePath
-// shaderModel
-
-
-//ID3DBlob* CompileShader(const std::wstring& filePath, const std::string& shaderModel) {
-//
-//	ID3DBlob* shaderBlob = nullptr;
-//	ID3DBlob* errorBlob = nullptr;
-//
-//	HRESULT hr =
-//	    D3DCompileFromFile(filePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderModel.c_str(), D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &shaderBlob, &errorBlob);
-//
-//	if (FAILED(hr)) {
-//
-//		if (errorBlob) {
-//			DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-//		}
-//
-//		assert(false);
-//	}
-//
-//	return shaderBlob;
-//}
-
-//関数プロトタイプ宣言
-ID3DBlob* CompileShader(const std::wstring& filePath, const std::string&shaderModel);
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
@@ -92,25 +62,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	//頂点シェーダーの読み込みとコンパイル
 	Shader vs;
-	vs.Load(L"Resources/shaders/TestVS.hlsl", "vs_5_0");
-	assert(vs.GetBlob() != nullptr);
-	/*ID3DBlob* vsBlob= CompileShader(L"Resources/shaders/TestVS.hlsl", "vs_5_0");
-	assert(vsBlob != nullptr);*/
+	vs.LoadDxc(L"Resources/shaders/TestVS.hlsl", L"vs_6_0");
+	assert(vs.GetDxcBlob() != nullptr);
+	
 
 	//ピクセルシェーダーの読み込みとコンパイル
 	Shader ps;
-	ps.Load(L"Resources/shaders/testPS.hlsl", "ps_5_0");
-	assert(ps.GetBlob() != nullptr);
+	ps.LoadDxc(L"Resources/shaders/testPS.hlsl", L"ps_6_0");
+	assert(ps.GetDxcBlob() != nullptr);
 
-	/*ID3DBlob* psBlob = CompileShader(L"Resources/shaders/testPS.hlsl", "ps_5_0");
-	assert(psBlob != nullptr);*/
-
+	
 	//PSOの作成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = rootSignature;
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
-	graphicsPipelineStateDesc.VS = {vs.GetBlob()->GetBufferPointer(), vs.GetBlob()->GetBufferSize()};
-	graphicsPipelineStateDesc.PS = {ps.GetBlob()->GetBufferPointer(), ps.GetBlob()->GetBufferSize()};
+	graphicsPipelineStateDesc.VS = {vs.GetDxcBlob()->GetBufferPointer(), vs.GetDxcBlob()->GetBufferSize()};
+	graphicsPipelineStateDesc.PS = {ps.GetDxcBlob()->GetBufferPointer(), ps.GetDxcBlob()->GetBufferSize()};
 	graphicsPipelineStateDesc.BlendState = blendDesc;
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
 
@@ -175,7 +142,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// メインループ
 	while (true) {
 		// エンジンの更新
-		if (KamataEngine::Update()) {
+		if (KamataEngine::Update()) 
+		{
 			break;
 		}
 
@@ -202,8 +170,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	
 
 	rootSignature->Release();
-	/*vsBlob->Release();
-	psBlob->Release();*/
+	
 
 	KamataEngine::Finalize();
 
