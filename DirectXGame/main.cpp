@@ -68,7 +68,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	//ピクセルシェーダーの読み込みとコンパイル
 	Shader ps;
-	ps.LoadDxc(L"Resources/shaders/testPS.hlsl", L"ps_6_0");
+	ps.LoadDxc(L"Resources/shaders/TestPS.hlsl", L"ps_6_0");
 	assert(ps.GetDxcBlob() != nullptr);
 
 	
