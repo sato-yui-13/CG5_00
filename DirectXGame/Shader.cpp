@@ -1,13 +1,16 @@
 #include "Shader.h"
+#include "MiscUtility.h"
+#include<d3dcompiler.h>
+#include <dxcapi.h>
 #include <cassert>
-#include <d3dcompiler.h>
+#pragma comment(lib, "dxcompiler.lib")
 
 void Shader::Load(const std::wstring& filePath, const std::wstring& shaderModel) {
 	ID3DBlob* shaderBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 
 	// wstring=>string　文字列変換
-	std::string mbShaderModel = std::string(shaderModel.begin(), shaderModel.end());
+	std::string mbShaderModel = ConvertString(shaderModel);
 
 	HRESULT hr = D3DCompileFromFile(
 	    filePath.c_str(), // シェーダーファイル名
@@ -65,16 +68,25 @@ void Shader::LoadDxc(const std::wstring& filePath, const std::wstring& shaderMod
 	LPCWSTR arguments[] = {
 	    filePath.c_str(), L"-E", L"main", L"-T", shaderModel.c_str(), L"-zi", L"-Qembed_debug", L"-Od", L"-Zpr",
 	};
-	IDxcResult* shaderResult = nullptr;
 
-	hr = dxcCompiler->Compile(&shaderSourceBuffer, arguments, _countof(arguments), includeHandeler, IID_PPV_ARGS(&shaderResult));
-	// コンパイルエラーではなくdxcが起動できないなどの致命的な状況
+	// 実際にshaderをコンパイルする
+	IDxcResult* shaderResult = nullptr;
+	hr = dxcCompiler->Compile(
+	    &shaderSourceBuffer,        // 読み込んだファイル
+	    arguments,                  // コンパイルオプション
+	    _countof(arguments),        // コンパイルオプションの数
+	    includeHandeler,            // includeが含まれた際の
+	    IID_PPV_ARGS(&shaderResult) // コンパイル結果
+	);
+
+	// コンパイルエラーではなくdxcが起動できないなど致命的な状況
 	assert(SUCCEEDED(hr));
 
-	// 3. 警告・エラーが出てないか確認する
+	// 3. 警告・エラーがでていないか確認する
 	IDxcBlobUtf8* shaderError = nullptr;
 	IDxcBlobWide* nameBlob = nullptr;
 	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), &nameBlob);
+
 	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
 		OutputDebugStringA(shaderError->GetStringPointer());
 		assert(false);
