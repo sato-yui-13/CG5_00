@@ -28,7 +28,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	descriptionRootSignatuer.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	ID3DBlob* signatureBlob = nullptr;
 	ID3DBlob* errorBlog = nullptr;
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignatuer, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlog);
+	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignatuer, D3D_ROOT_SIGNATURE_VERSION_1_0, &signatureBlob, &errorBlog);
 	if (FAILED(hr)) {
 		DebugText::GetInstance()->ConsolePrintf(reinterpret_cast<char*>(errorBlog->GetBufferPointer()));
 		assert(false);

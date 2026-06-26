@@ -66,7 +66,7 @@ void Shader::LoadDxc(const std::wstring& filePath, const std::wstring& shaderMod
 	// 2. Compileする
 	//    Compilerに必要なコンパイルオプションの準備
 	LPCWSTR arguments[] = {
-	    filePath.c_str(), L"-E", L"main", L"-T", shaderModel.c_str(), L"-zi", L"-Qembed_debug", L"-Od", L"-Zpr",
+	    filePath.c_str(), L"-E", L"main", L"-T", shaderModel.c_str(), L"-Zi", L"-Qembed_debug", L"-Od", L"-Zpr",
 	};
 
 	// 実際にshaderをコンパイルする
