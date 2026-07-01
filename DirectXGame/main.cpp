@@ -5,6 +5,7 @@
 #include "RootSignature.h"
 #include "Shader.h"
 #include "VertexBuffer.h"
+
 // #include<d3dcompiler.inl>
 #include <Windows.h>
 #include <cassert>
@@ -14,12 +15,20 @@ using namespace KamataEngine;
 // 関数プロテクトタイプ宣言
 void SetupPipeLineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps) {
 
-	// InputLayout
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
+
+	// POSITION
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
+	// TEXCOORD
+	inputElementDescs[1].SemanticName = "TEXCOORD";
+	inputElementDescs[1].SemanticIndex = 0;
+	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -96,14 +105,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// Vertex4 => VertexData に変更して利用する
 	struct VertexData {
 		Vector4 position;
+		Vector2 texcoord;
 	};
 
 	// 頂点データの準備　★00_07　追加
-	VertexData vertices[] = {
+	/*VertexData vertices[] = {
 	    {-1.0f, 1.0f,  0.0f, 1.0f},
 	    {1.0f,  1.0f,  0.0f, 1.0f},
 	    {-1.0f, -1.0f, 0.0f, 1.0f},
 	    {1.0f,  -1.0f, 0.0f, 1.0f},
+	};*/
+
+	VertexData vertices[] = {
+	    //  x      y      z      w        u    v
+	    {{-1.0f, 1.0f, 0.0f, 1.0f},  {0.0f, 0.0f}}, // 左上
+	    {{1.0f, 1.0f, 0.0f, 1.0f},   {1.0f, 0.0f}}, // 右上
+	    {{-1.0f, -1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // 左下
+	    {{1.0f, -1.0f, 0.0f, 1.0f},  {1.0f, 1.0f}}, // 右下
 	};
 
 	////VertexResourceの生成 ------
