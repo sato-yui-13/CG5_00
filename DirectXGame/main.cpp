@@ -5,6 +5,7 @@
 #include "RootSignature.h"
 #include "Shader.h"
 #include "VertexBuffer.h"
+#include "WorldTransformEx.h"
 
 // #include<d3dcompiler.inl>
 #include <Windows.h>
@@ -152,6 +153,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	// DirectXCommonクラスが管理している。コマンドリストの取得
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
+
+
+	//3Dモデル==============
+	//被写体の準備
+	Model* model = Model::CreateFromOBJ("terrain");
+
+	WorldTransformEx worldTransform;
+	worldTransform.Initialize();
+	worldTransform.scale_ = Vector3(1.0f, 1.0f, 1.0f);
+
+	//カメラの準備
+	Camera camera;
+	camera.Initialize();
+	camera.translation_ = Vector3(0.0f, 1.0f, 0.0f);
+	
 
 	// RootSignature作成
 	RootSignature rs;
@@ -320,6 +336,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			break;
 		}
 
+
+		//world変更行列定数バッファへの転送
+		worldTransform.rotation_.y+=0.005f;
+		worldTransform.UpdateMatrix();
+
+		//cameraの更新と定数バッファへの転送
+		camera.UpdateMatrix();
+
 		// 描画開
 
 		// TransitionBarrierを SRV → RTV に設定する
@@ -365,7 +389,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 
+		
 		// 描画
+
+		Model::PreDraw();
+		model->Draw(worldTransform,camera);
+		Model::PostDraw();
 
 		// ここにゲームの3Dシーンの描画処理を置く ※次回
 		// TransitionBarrierを元に戻し、PixelShaderが扱えるようにする
@@ -402,6 +431,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		// 描画終了
 		dxCommon->PostDraw();
 	}
+	delete model;
 
 	// 解放処理
 	// vertexResource->Release();
@@ -412,7 +442,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	depthStencilResource->Release();
 	dsvDescriptorHeap->Release();
 
-
+	
 	KamataEngine::Finalize();
 
 	return 0;
