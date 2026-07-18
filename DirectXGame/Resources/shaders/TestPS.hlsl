@@ -11,13 +11,25 @@ struct PixelShaderOutput
 PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
+
     float32_t2 uv = input.texcoord;
+
     float32_t4 textureColor = gTexture.Sample(gSampler, uv);
-    
-    float32_t value = dot(textureColor.rgb, float32_t3(0.2125f, 1.7254f, 0.0721f));
-    // 位置セット( x y z w )か カラーセット( r g b a )でアクセスできる
-    output.color = float32_t4(value, value, value, textureColor.a);
+
+
+    // Grayscale処理
+    float32_t value = dot(
+        textureColor.rgb,
+        float32_t3(0.299f, 0.587f, 0.114f)
+    );
+
+
+    output.color = float32_t4(
+        value,
+        value,
+        value,
+        textureColor.a
+    );
 
     return output;
-    
 }
